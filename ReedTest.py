@@ -24,34 +24,53 @@ def csv(logger,list):
     log.info("Created csv")
 
 
+#def urlOpen():
+    #html = urlopen("https://www.reed.co.uk/jobs/{}?pageno=1".format(jobtype))
+
 def getPage(jobtype, logger):
     log = logger
     try:
-        urlopen("https://www.reed.co.uk/jobs/{}?pageno=1".format(jobtype))
+        html_ = urlopen("https://www.reed.co.uk/jobs/{}?pageno=1".format(jobtype))
         log.info("Page found!")
     except HTTPError as e:
         log.critical(e)
         log.critical("Try to enter a valid format")
+        sys.exit(-1)
     except URLError as f:
         log.critical(f)
         log.critical("Check if the page is not down")
+        sys.exit(-1)
+    return html_
 
 
 def pageCalc(logger, link):
     log = logger
-    html = urlopen(link)
+
+    html = link
+
     bs = BeautifulSoup(html, 'html.parser')
     job = bs.find_all('div', class_="col-sm-12 col-md-9 col-lg-9 details")
-    log.info(job)
-    #jobsNumber = (len(job))
-    #pageCounter = bs.find('div', class_="page-counter").text
-    #totalPages = int(pageCounter[10,-5])
-    #log.info(jobsNumber)
+    onePageJobs = int(len(job))
+    log.info("The number of jobs from one page:")
+    log.info(onePageJobs)
+
+    totalJobs = bs.find('div', class_="page-counter").text
+    cut = re.compile('of\s[0-9],\d+\sjobs')
+
+    n = (str(cut.findall(totalJobs)))
+    number = int(n[4:-6].replace(',', ''))
+    log.info("The number of available jobs:")
+    log.info(number)
+
+    totalPages = math.ceil (totalJobs / onePageJobs)
+    return totalPages
+
 
 
 logger = log()
 link = getPage('delivery-driver-jobs', logger)
 pageCalc(logger,link)
+pageNr = pageCalc()
 #csv(logger)
 
 
