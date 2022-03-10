@@ -25,25 +25,9 @@ def csv(logger,list):
 
 
 
-def getPage(jobtype, logger):
+def pageCalc(logger, job):
     log = logger
-    try:
-        html_ = urlopen("https://www.reed.co.uk/jobs/{}?pageno=1".format(jobtype))
-        log.info("Page found!")
-    except HTTPError as e:
-        log.critical(e)
-        log.critical("Try to enter a valid format")
-        sys.exit(-1)
-    except URLError as f:
-        log.critical(f)
-        log.critical("Check if the page is not down")
-        sys.exit(-1)
-    return html_
-
-
-def pageCalc(logger, link):
-    log = logger
-    html = link
+    html = urlopen("https://www.reed.co.uk/jobs/{}".format(job))
 
     #Counts how many jobs exists on a job page
     bs = BeautifulSoup(html, 'html.parser')
@@ -58,19 +42,30 @@ def pageCalc(logger, link):
     cut = re.compile('of\s[0-9],\d+\sjobs')
     n = (str(cut.findall(totalJobs)))
     number = int(n[4:-6].replace(",", ""))
+    log.info("The number of overall jobs: ")
+    log.info(number)
 
     page_number = math.ceil(number / onePageJobs)
+    log.info("The number of pages that contain the chosen type of job")
     log.info(page_number)
 
     return page_number
 
 
 
-
-
-def jobDetails(logger, link):
+def jobDetails(logger, jobType, number):
     log = logger
-    html = link
+    try:
+        html = urlopen("https://www.reed.co.uk/jobs/{}?pageno={}".format(jobType, number))
+        log.info("Page found!")
+    except HTTPError as e:
+        log.critical(e)
+        log.critical("Try to enter a valid format")
+        sys.exit(-1)
+    except URLError as f:
+        log.critical(f)
+        log.critical("Check if the page is not down")
+        sys.exit(-1)
     bs = BeautifulSoup(html, 'html.parser')
     jobs = bs.find_all('div', class_="col-sm-12 col-md-9 col-lg-9 details")
     for job in jobs:
@@ -82,11 +77,27 @@ def jobDetails(logger, link):
         log.info(tle + title)
 
         try:
+            title_ = job.find('h3', class_='title').text
+            csv_remote = " ".join(title_.split())
+        except:
+            csv_remote = "N/A"
+
+
+
+        try:
             salary = job.find('li', class_='salary').text
         except:
             salary = "cannot extract job's salary -- not found"
         s = "Extracted job's salary value: "
         log.info(s + salary)
+
+        try:
+            salary_ = job.find('li', class_='salary').text
+            csv_salary = " ".join(salary_.split())
+        except:
+            csv_salary = "N/A"
+
+
 
         try:
             location = job.find('li', class_='location').text
@@ -96,11 +107,27 @@ def jobDetails(logger, link):
         log.info(l + location)
 
         try:
+            location_ = job.find('li', class_='location').text
+            csv_location = " ".join(location_.split())
+        except:
+            csv_location = "N/A"
+
+
+
+        try:
             time = job.find('li', class_='time').text
         except:
             time = "cannot extract job's duration -- not found"
         tme = "Extracted job's time value: "
         log.info(tme + time)
+
+        try:
+            time_ = job.find('li', class_='time').text
+            csv_time = " ".join(time_.split())
+        except:
+            csv_time = "N/A"
+
+
 
         try:
             remote = job.find('li', class_='remote').text
@@ -109,15 +136,23 @@ def jobDetails(logger, link):
         r = "Extracted job's remote value: "
         log.info(r + remote)
 
+        try:
+            remote_ = job.find('li', class_='remote').text
+            csv_remote = " ".join(remote_.split())
+        except:
+            csv_remote = "N/A"
 
 
-
+#delivery-driver-jobs
+job = input("Please enter the type of job, as it is on the site's url: ")
 
 logger = log()
-link = getPage('delivery-driver-jobs', logger)
-pageNr = pageCalc(logger, link)
-jobDetails(logger, link)
-#csv(logger)
+pageNr = pageCalc(logger, job)
+for i in range(0, pageNr):
+    jobDetails(logger, job, i)
+
+
+    #csv(logger)
 
 
 
