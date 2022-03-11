@@ -27,21 +27,29 @@ def csv(logger,list):
 
 def pageCalc(logger, job):
     log = logger
-    html = urlopen("https://www.reed.co.uk/jobs/{}".format(job))
+    html = urlopen("{}".format(job))
 
     #Counts how many jobs exists on a job page
     bs = BeautifulSoup(html, 'html.parser')
     jobs = bs.find_all('div', class_="col-sm-12 col-md-9 col-lg-9 details")
-    onePageJobs = int(len(jobs))
+    pageJobs = int(len(jobs))
+    promoted = bs.find_all('label', class_="label label-promoted")
+    log.info("Promoted jobs to exclude...")
+    log.info(len(promoted))
+    onePageJobs = pageJobs - int(len(promoted))
     log.info("The number of jobs from one page:")
     log.info(onePageJobs)
-
     #Gets the number of overall jobs
     totalJobs = str(bs.find('div', class_="page-counter"))
 
-    cut = re.compile('of\s[0-9],\d+\sjobs')
+    cut = re.compile('of\s[0-9]\d+\sjobs')
     n = (str(cut.findall(totalJobs)))
-    number = int(n[4:-6].replace(",", ""))
+    log.info("Extracted the string..")
+    log.info(cut)
+    nr = n.replace(",","")
+    print(nr)
+    number = int(nr[4:-6])
+    log.info(number)
     log.info("The number of overall jobs: ")
     log.info(number)
 
@@ -56,7 +64,7 @@ def pageCalc(logger, job):
 def jobDetails(logger, jobType, number):
     log = logger
     try:
-        html = urlopen("https://www.reed.co.uk/jobs/{}?pageno={}".format(jobType, number))
+        html = urlopen(jobType+"{}".format(number))
         log.info("Page found!")
     except HTTPError as e:
         log.critical(e)
@@ -144,15 +152,16 @@ def jobDetails(logger, jobType, number):
 
 
 #delivery-driver-jobs
-job = input("Please enter the type of job, as it is on the site's url: ")
+job = str(sys.argv[1])
+print(type(job))
 
 logger = log()
 pageNr = pageCalc(logger, job)
-for i in range(0, pageNr):
+for i in range(0, pageNr + 1):
     jobDetails(logger, job, i)
 
 
-    #csv(logger)
+
 
 
 
