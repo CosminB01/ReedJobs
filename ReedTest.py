@@ -59,15 +59,18 @@ def pageCalc(logger, job):
 
     return page_number
 
+def createCvs():
+    with open('reedjobs.csv','w', newline='') as f:
+        thewriter = csv.writer(f)
+        header = ["Title","Salary","Location","Contract","Remote/Site"]
+        thewriter.writerow(header)
 
 def csvDetails(jobType, number):
     html = urlopen("{}?pageno={}".format(jobType, number))
     bs = BeautifulSoup(html, 'html.parser')
     jobs = bs.find_all('div', class_="col-sm-12 col-md-9 col-lg-9 details")
-    with open('reedjobs.csv', 'w', newline='') as f:
+    with open('reedjobs.csv', 'a', newline='') as f:
         thewriter = csv.writer(f)
-        header = ["Title","Salary","Location","Contract","Remote/Site"]
-        thewriter.writerow(header)
         for job in jobs:
             try:
                 title_ = job.find('h3', class_='title').text
@@ -147,6 +150,7 @@ def jobDetails(logger, jobType, number):
 job = str(sys.argv[1])
 
 logger = log()
+createCvs()
 pageCheck(logger, job)
 pageNr = pageCalc(logger, job)
 for i in range(1, pageNr+1):
