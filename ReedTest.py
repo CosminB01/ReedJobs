@@ -29,7 +29,7 @@ def pageCalc(logger, job):
     log = logger
     html = urlopen("{}".format(job))
 
-    #Counts how many jobs exists on a job page
+    #Counts how many jobs one page contains
     bs = BeautifulSoup(html, 'html.parser')
     jobs = bs.find_all('div', class_="col-sm-12 col-md-9 col-lg-9 details")
     pageJobs = int(len(jobs))
@@ -151,9 +151,8 @@ def jobDetails(logger, jobType, number):
             csv_remote = "N/A"
 
 
-#delivery-driver-jobs
+
 job = str(sys.argv[1])
-print(type(job))
 
 logger = log()
 pageNr = pageCalc(logger, job)
