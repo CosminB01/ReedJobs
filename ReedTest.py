@@ -23,6 +23,21 @@ def csv(logger,list):
         writer.writerow(list)
     log.info("Created csv")
 
+def pageCheck(logger, job):
+    log = logger
+    try:
+        urlopen(job)
+        log.info("Page found!")
+    except HTTPError as e:
+        log.critical(e)
+        log.critical("Try to enter a valid format")
+        sys.exit(-1)
+    except URLError as f:
+        log.critical(f)
+        log.critical("Check if the page is not down")
+        sys.exit(-1)
+
+
 
 
 def pageCalc(logger, job):
@@ -34,22 +49,18 @@ def pageCalc(logger, job):
     jobs = bs.find_all('div', class_="col-sm-12 col-md-9 col-lg-9 details")
     pageJobs = int(len(jobs))
     promoted = bs.find_all('label', class_="label label-promoted")
-    log.info("Promoted jobs to exclude...")
+    log.info("Promoted jobs to exclude from the jobs counting: ")
     log.info(len(promoted))
     onePageJobs = pageJobs - int(len(promoted))
     log.info("The number of jobs from one page:")
     log.info(onePageJobs)
     #Gets the number of overall jobs
-    totalJobs = str(bs.find('div', class_="page-counter"))
+    totalJobs = bs.find('div', class_="page-counter").text
 
-    cut = re.compile('of\s[0-9]\d+\sjobs')
+    cut = re.compile('of\s[0-9].*|.\d+\sjobs')
     n = (str(cut.findall(totalJobs)))
-    log.info("Extracted the string..")
-    log.info(cut)
     nr = n.replace(",","")
-    print(nr)
-    number = int(nr[4:-6])
-    log.info(number)
+    number = int(nr[5:-9])
     log.info("The number of overall jobs: ")
     log.info(number)
 
@@ -63,17 +74,8 @@ def pageCalc(logger, job):
 
 def jobDetails(logger, jobType, number):
     log = logger
-    try:
-        html = urlopen(jobType+"{}".format(number))
-        log.info("Page found!")
-    except HTTPError as e:
-        log.critical(e)
-        log.critical("Try to enter a valid format")
-        sys.exit(-1)
-    except URLError as f:
-        log.critical(f)
-        log.critical("Check if the page is not down")
-        sys.exit(-1)
+
+    html = urlopen("{}?pageno={}".format(jobType, number))
     bs = BeautifulSoup(html, 'html.parser')
     jobs = bs.find_all('div', class_="col-sm-12 col-md-9 col-lg-9 details")
     for job in jobs:
@@ -155,8 +157,9 @@ def jobDetails(logger, jobType, number):
 job = str(sys.argv[1])
 
 logger = log()
+pageCheck(logger, job)
 pageNr = pageCalc(logger, job)
-for i in range(0, pageNr + 1):
+for i in range(1, pageNr+1):
     jobDetails(logger, job, i)
 
 
