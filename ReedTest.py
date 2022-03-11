@@ -5,7 +5,7 @@ from urllib.error import HTTPError
 from urllib.error import URLError
 import re
 import math
-from csv import writer
+import csv
 import sys
 
 
@@ -14,14 +14,6 @@ def log():
     logger = logging.getLogger(__name__)
     return logger
 
-def csv(logger,list):
-    log = logger
-    with open('reedjobs.csv', 'w', newline='') as f:
-        writer = csv.writer(f)
-        header = ['Title', 'Location', 'Salary', 'Duration', 'Type']
-        writer.writerow(header)
-        writer.writerow(list)
-    log.info("Created csv")
 
 def pageCheck(logger, job):
     log = logger
@@ -38,12 +30,9 @@ def pageCheck(logger, job):
         sys.exit(-1)
 
 
-
-
 def pageCalc(logger, job):
     log = logger
     html = urlopen("{}".format(job))
-
     #Counts how many jobs one page contains
     bs = BeautifulSoup(html, 'html.parser')
     jobs = bs.find_all('div', class_="col-sm-12 col-md-9 col-lg-9 details")
@@ -71,10 +60,50 @@ def pageCalc(logger, job):
     return page_number
 
 
+def csvDetails(jobType, number):
+    html = urlopen("{}?pageno={}".format(jobType, number))
+    bs = BeautifulSoup(html, 'html.parser')
+    jobs = bs.find_all('div', class_="col-sm-12 col-md-9 col-lg-9 details")
+    with open('reedjobs.csv', 'w', newline='') as f:
+        thewriter = csv.writer(f)
+        header = ["Title","Salary","Location","Contract","Remote/Site"]
+        thewriter.writerow(header)
+        for job in jobs:
+            try:
+                title_ = job.find('h3', class_='title').text
+                c_title = " ".join(title_.split())
+            except:
+                c_title = "N/A"
+
+            try:
+                salary_ = job.find('li', class_='salary').text
+                c_salary = " ".join(salary_.split())
+            except:
+                c_salary = "N/A"
+
+            try:
+                location_ = job.find('li', class_='location').text
+                c_location = " ".join(location_.split())
+            except:
+                c_location = "N/A"
+
+            try:
+                time_ = job.find('li', class_='time').text
+                c_time = " ".join(time_.split())
+            except:
+                c_time = "N/A"
+
+            try:
+                remote_ = job.find('li', class_='remote').text
+                c_remote = " ".join(remote_.split())
+            except:
+                c_remote = "N/A"
+            list = [c_title, c_salary, c_location, c_time, c_remote]
+            thewriter.writerow(list)
+
 
 def jobDetails(logger, jobType, number):
     log = logger
-
     html = urlopen("{}?pageno={}".format(jobType, number))
     bs = BeautifulSoup(html, 'html.parser')
     jobs = bs.find_all('div', class_="col-sm-12 col-md-9 col-lg-9 details")
@@ -87,27 +116,11 @@ def jobDetails(logger, jobType, number):
         log.info(tle + title)
 
         try:
-            title_ = job.find('h3', class_='title').text
-            csv_remote = " ".join(title_.split())
-        except:
-            csv_remote = "N/A"
-
-
-
-        try:
             salary = job.find('li', class_='salary').text
         except:
             salary = "cannot extract job's salary -- not found"
         s = "Extracted job's salary value: "
         log.info(s + salary)
-
-        try:
-            salary_ = job.find('li', class_='salary').text
-            csv_salary = " ".join(salary_.split())
-        except:
-            csv_salary = "N/A"
-
-
 
         try:
             location = job.find('li', class_='location').text
@@ -117,14 +130,6 @@ def jobDetails(logger, jobType, number):
         log.info(l + location)
 
         try:
-            location_ = job.find('li', class_='location').text
-            csv_location = " ".join(location_.split())
-        except:
-            csv_location = "N/A"
-
-
-
-        try:
             time = job.find('li', class_='time').text
         except:
             time = "cannot extract job's duration -- not found"
@@ -132,26 +137,11 @@ def jobDetails(logger, jobType, number):
         log.info(tme + time)
 
         try:
-            time_ = job.find('li', class_='time').text
-            csv_time = " ".join(time_.split())
-        except:
-            csv_time = "N/A"
-
-
-
-        try:
             remote = job.find('li', class_='remote').text
         except:
             remote = "cannot extract job's type (remote or not) -- not found"
         r = "Extracted job's remote value: "
         log.info(r + remote)
-
-        try:
-            remote_ = job.find('li', class_='remote').text
-            csv_remote = " ".join(remote_.split())
-        except:
-            csv_remote = "N/A"
-
 
 
 job = str(sys.argv[1])
@@ -161,6 +151,9 @@ pageCheck(logger, job)
 pageNr = pageCalc(logger, job)
 for i in range(1, pageNr+1):
     jobDetails(logger, job, i)
+for i in range(1, pageNr+1):
+    csvDetails(job, i)
+
 
 
 
